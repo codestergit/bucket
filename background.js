@@ -1,14 +1,22 @@
 
 var baseURL = 'https://api.github.com/';
+var token = 'b4e4762b6414bf1092da4a53e2770627caca0cae'
+
 
 function saveLink() {
-    chrome.tabs.getSelected(null, function(tab) {
-      d = document;
-      console.log('abc' + tab.url);
-
-      var token = '89b575e0e76fd8486e9071f9fdbc9d236016ceee'
-
+  chrome.tabs.getSelected(null, function(tab) {
+    d = document;
+    console.log('abc' + tab.url);
+    if (token === '') {
+      authorize(function (token) {
+        setLink(token, tab.url, tab.title);
+        token = token;
+      });
+    } else {
       setLink(token, tab.url, tab.title);
+    }
+
+
 
     //   xhr.setRequestHeader("Authorization", "Basic " + btoa("user:pwd")); 
     //   xhr.onreadystatechange = function() { 
@@ -40,7 +48,7 @@ function saveLink() {
    //  url: 'https://api.github.com/authorizations',
    //  type: 'POST',
    //  beforeSend: function(xhr) { 
-        
+    
    //  },
    //  data: '{"scopes":["repo"],"note":"create repo with ajax"}'
    // }).done(function(response) {
@@ -61,6 +69,47 @@ function saveLink() {
 }
 
 
+function authorize(callBack) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', baseURL + 'authorizations', true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.setRequestHeader("Accept", "application/json");
+  xhr.setRequestHeader("Authorization", "Basic " + btoa("testlinky:13203ter@13")); 
+  xhr.onreadystatechange = function() { 
+    // If the request completed
+    if (xhr.readyState == 4) {
+      if(xhr.status == 200 || xhr.status == 201) {
+        callBack(JSON.parse(xhr.response).token);
+      } else {
+        // Please verify response
+      }
+      alert(xhr.responseText);
+    }
+  }
+  xhr.send('{"scopes":["public_repo"],"note":"new2"}');
+
+}
+
+function getFile(url, callBack) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.setRequestHeader("Accept", "application/json");
+  xhr.setRequestHeader("Authorization", "token " + token); 
+  xhr.onreadystatechange = function() { 
+    // If the request completed
+    if (xhr.readyState == 4) {
+      if(xhr.status == 200 || xhr.status == 201) {
+        callBack(JSON.parse(xhr.response).sha);
+      } else {
+        // Please verify response
+      }
+      alert(xhr.responseText);
+    }
+  }
+  xhr.send(null);
+}
+
 function setLink(token, url, title) {
 
 // Create repo
@@ -75,24 +124,32 @@ function setLink(token, url, title) {
 }).done(function(response) {
     console.log(response);
 });
- */
+*/
 var contents_url =  baseURL + 'repos/testlinky/saveit/contents/';
 var filename = "SaveIt.md";
 var filemessage = title;
 var filecontent = "[" + title + "](" + url + ")"
 var basecontent = btoa(filecontent);
 var apiurl = contents_url + filename;
-var filedata = '{"message":"'+filemessage+'","content":"'+basecontent+'"}';
+             var filedata = {"message":filemessage,"content":basecontent};
 
+   getFile(apiurl, function(sha) {
           // Set up an asynchronous AJAX POST request
-      var xhr = new XMLHttpRequest();
-      xhr.open('PUT', apiurl, true);
-      xhr.setRequestHeader("Content-Type", "application/json");
-      xhr.setRequestHeader("Authorization", "token " + token); 
-      xhr.onreadystatechange = function() { 
+          if (sha) {
+            filedata.sha = sha;
+
+          } 
+
+          var xhr = new XMLHttpRequest();
+          xhr.open('PUT', apiurl, true);
+          xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.setRequestHeader("Authorization", "token " + token); 
+          xhr.setRequestHeader("Accept", "application/json");
+
+          xhr.onreadystatechange = function() { 
         // If the request completed
         if (xhr.readyState == 4) {
-            alert(xhr.statusText)
+          alert(xhr.statusText)
 
             // if (xhr.status == 200) {
             //     // If it was a success, close the popup after a short delay
@@ -102,11 +159,16 @@ var filedata = '{"message":"'+filemessage+'","content":"'+basecontent+'"}';
             //     // Show what went wrong
             //     statusDisplay.innerHTML = 'Error saving: ' + xhr.statusText;
             // }
-        }
-    };
+          }
+        };
 
-    // Send the request and set status
-    xhr.send(filedata);
+     // Send the request and set status
+      xhr.send(JSON.stringify(filedata));
+   });
+ 
+
+
+
 
 
 // $.ajax({ 
@@ -120,7 +182,7 @@ var filedata = '{"message":"'+filemessage+'","content":"'+basecontent+'"}';
 //     console.log(response);
 // });
 
- 
+
 }
 // POST the data to the server using XMLHttpRequest
 function addBookmark() {
@@ -141,9 +203,9 @@ function addBookmark() {
     var tags = encodeURIComponent(document.getElementById('tags').value);
 
     var params = 'title=' + title + 
-                 '&url=' + url + 
-                 '&summary=' + summary +
-                 '&tags=' + tags;
+    '&url=' + url + 
+    '&summary=' + summary +
+    '&tags=' + tags;
 
     // Replace any instances of the URLEncoded space char with +
     params = params.replace(/%20/g, '+');
@@ -155,23 +217,23 @@ function addBookmark() {
     xhr.onreadystatechange = function() { 
         // If the request completed
         if (xhr.readyState == 4) {
-            statusDisplay.innerHTML = '';
-            if (xhr.status == 200) {
+          statusDisplay.innerHTML = '';
+          if (xhr.status == 200) {
                 // If it was a success, close the popup after a short delay
                 statusDisplay.innerHTML = 'Saved!';
                 window.setTimeout(window.close, 1000);
-            } else {
+              } else {
                 // Show what went wrong
                 statusDisplay.innerHTML = 'Error saving: ' + xhr.statusText;
+              }
             }
-        }
-    };
+          };
 
     // Send the request and set status
     xhr.send(params);
     statusDisplay.innerHTML = 'Saving...';
-}
+  }
 
 
 
-chrome.browserAction.onClicked.addListener(saveLink);
+  chrome.browserAction.onClicked.addListener(saveLink);
