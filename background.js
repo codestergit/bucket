@@ -1,6 +1,6 @@
 
 var baseURL = 'https://api.github.com/';
-var token = 'b4e4762b6414bf1092da4a53e2770627caca0cae'
+var token = '8961ee046a6077da942115c569a41084aaaed0ba'
 
 
 function saveLink() {
@@ -74,7 +74,7 @@ function authorize(callBack) {
   xhr.open('POST', baseURL + 'authorizations', true);
   xhr.setRequestHeader("Content-Type", "application/json");
   xhr.setRequestHeader("Accept", "application/json");
-  xhr.setRequestHeader("Authorization", "Basic " + btoa("testlinky:13203ter@13")); 
+  xhr.setRequestHeader("Authorization", "Basic " + btoa("testlinky:pwd")); 
   xhr.onreadystatechange = function() { 
     // If the request completed
     if (xhr.readyState == 4) {
@@ -86,7 +86,7 @@ function authorize(callBack) {
       alert(xhr.responseText);
     }
   }
-  xhr.send('{"scopes":["public_repo"],"note":"new2"}');
+  xhr.send('{"scopes":["public_repo"],"note":"new3"}');
 
 }
 
@@ -100,9 +100,10 @@ function getFile(url, callBack) {
     // If the request completed
     if (xhr.readyState == 4) {
       if(xhr.status == 200 || xhr.status == 201) {
-        callBack(JSON.parse(xhr.response).sha);
+        callBack(JSON.parse(xhr.response));
       } else {
         // Please verify response
+        callBack(url, null);
       }
       alert(xhr.responseText);
     }
@@ -125,46 +126,39 @@ function setLink(token, url, title) {
     console.log(response);
 });
 */
-var contents_url =  baseURL + 'repos/testlinky/saveit/contents/';
-var filename = "SaveIt.md";
-var filemessage = title;
-var filecontent = "[" + title + "](" + url + ")"
-var basecontent = btoa(filecontent);
-var apiurl = contents_url + filename;
-             var filedata = {"message":filemessage,"content":basecontent};
+  var contents_url =  baseURL + 'repos/testlinky/saveit/contents/';
+  var filename = "SaveIt.md";
+  var filemessage = title;
+  var filecontent = "[" + title + "](" + url + ")"
+  var apiurl = contents_url + filename;
 
-   getFile(apiurl, function(sha) {
-          // Set up an asynchronous AJAX POST request
-          if (sha) {
-            filedata.sha = sha;
+  getFile(apiurl, function(response) {
+         // Set up an asynchronous AJAX POST request
 
-          } 
+         // I think it is stupid might take lot if memory. Will resolve later.
+         var content = atob(response.content);
+         content = btoa(content + "\n\n" + filecontent);
 
-          var xhr = new XMLHttpRequest();
-          xhr.open('PUT', apiurl, true);
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.setRequestHeader("Authorization", "token " + token); 
-          xhr.setRequestHeader("Accept", "application/json");
+         var filedata = {"message":filemessage,"content":content};
 
-          xhr.onreadystatechange = function() { 
-        // If the request completed
-        if (xhr.readyState == 4) {
-          alert(xhr.statusText)
+         if (response && response.sha) {
+           filedata.sha = response.sha;
+         } 
+         var xhr = new XMLHttpRequest();
+         xhr.open('PUT', apiurl, true);
+         xhr.setRequestHeader("Content-Type", "application/json");
+         xhr.setRequestHeader("Authorization", "token " + token); 
+         xhr.setRequestHeader("Accept", "application/json");
+         xhr.onreadystatechange = function() { 
+       // If the request completed
+       if (xhr.readyState == 4) {
+         alert(xhr.statusText)
 
-            // if (xhr.status == 200) {
-            //     // If it was a success, close the popup after a short delay
-            //     statusDisplay.innerHTML = 'Saved!';
-            //     window.setTimeout(window.close, 1000);
-            // } else {
-            //     // Show what went wrong
-            //     statusDisplay.innerHTML = 'Error saving: ' + xhr.statusText;
-            // }
-          }
-        };
-
-     // Send the request and set status
-      xhr.send(JSON.stringify(filedata));
-   });
+         }
+       };
+    // Send the request and set status
+     xhr.send(JSON.stringify(filedata));
+  });
  
 
 
