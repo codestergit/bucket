@@ -1,6 +1,6 @@
 
 var baseURL = 'https://api.github.com/';
-var token = '8961ee046a6077da942115c569a41084aaaed0ba'
+var token = ''
 
 
 function saveLink() {
@@ -68,7 +68,6 @@ function saveLink() {
     });
 }
 
-
 function authorize(callBack) {
   var xhr = new XMLHttpRequest();
   xhr.open('POST', baseURL + 'authorizations', true);
@@ -111,6 +110,18 @@ function getFile(url, callBack) {
   xhr.send(null);
 }
 
+function getLastLine(content) {
+var newline_mark = '\n';
+var last_br_position = content.lastIndexOf(newline_mark);
+var last_line;
+if (last_newline_position == -1)
+    last_line = content;
+else
+    last_line = content.substr(last_newline_position + newline_mark.length);
+return last_line;
+}
+
+
 function setLink(token, url, title) {
 
 // Create repo
@@ -129,7 +140,7 @@ function setLink(token, url, title) {
   var contents_url =  baseURL + 'repos/testlinky/saveit/contents/';
   var filename = "SaveIt.md";
   var filemessage = title;
-  var filecontent = "[" + title + "](" + url + ")"
+  var filecontent = "-[ ] [" + title + "](" + url + ")"
   var apiurl = contents_url + filename;
 
   getFile(apiurl, function(response) {
@@ -137,6 +148,7 @@ function setLink(token, url, title) {
 
          // I think it is stupid might take lot if memory. Will resolve later.
          var content = atob(response.content);
+
          content = btoa(content + "\n\n" + filecontent);
 
          var filedata = {"message":filemessage,"content":content};
